@@ -1,0 +1,140 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="color-scheme" content="light dark">
+  <title>УСН нарастающим итогом</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600&family=Source+Serif+4:opsz,wght@8..60,500;8..60,600&display=swap">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+<main class="page">
+  <header class="head">
+    <p class="eyebrow">Упрощённая система налогообложения</p>
+    <h1>УСН нарастающим итогом</h1>
+    <p class="lead">Введите доходы, расходы и взносы по кварталам. Калькулятор считает налог с начала года, показывает, сколько платить к каждому сроку, и объясняет каждый шаг расчёта.</p>
+  </header>
+
+  <div class="msg" id="example-note" role="note">Сейчас в таблице пример данных. Начните вводить свои цифры, и пример заменится.</div>
+
+  <section class="panel" aria-labelledby="h-params">
+    <h2 id="h-params" class="sr">Параметры расчёта</h2>
+    <div class="params">
+      <fieldset class="f f-wide">
+        <legend class="lbl">Объект налогообложения</legend>
+        <div class="seg">
+          <input class="sr" type="radio" name="mode" id="mode-d" value="d">
+          <label for="mode-d"><span>Доходы</span><b>6%</b></label>
+          <input class="sr" type="radio" name="mode" id="mode-dr" value="dr">
+          <label for="mode-dr"><span>Доходы минус расходы</span><b>15%</b></label>
+        </div>
+      </fieldset>
+      <div class="f">
+        <label class="lbl" for="rate">Ставка, %</label>
+        <input id="rate" class="field mono" type="text" inputmode="decimal" autocomplete="off">
+        <p class="hint">Региональная ставка может быть ниже: от 1% до 6% на доходах и от 5% до 15% на доходах минус расходы.</p>
+      </div>
+      <div class="f">
+        <label class="lbl" for="payer">Плательщик</label>
+        <select id="payer" class="field">
+          <option value="ip0">ИП без работников</option>
+          <option value="ip1">ИП с работниками</option>
+          <option value="org">Организация</option>
+        </select>
+      </div>
+      <div class="f">
+        <label class="lbl" for="year">Год</label>
+        <select id="year" class="field">
+          <option value="2025">2025</option>
+          <option value="2026">2026</option>
+        </select>
+      </div>
+      <div class="f" data-show="ip">
+        <label class="lbl" for="fixed">Фиксированные взносы ИП за год, ₽</label>
+        <div class="row">
+          <input id="fixed" class="field mono" type="text" inputmode="decimal" autocomplete="off">
+          <button class="btn" type="button" id="btn-spread">Разнести по кварталам</button>
+        </div>
+        <p class="hint" id="fixed-hint"></p>
+      </div>
+      <div class="f" data-show="dr">
+        <label class="lbl" for="loss">Убыток прошлых лет, ₽</label>
+        <input id="loss" class="field mono" type="text" inputmode="decimal" autocomplete="off" placeholder="0">
+        <p class="hint">Уменьшает налоговую базу только по итогам года.</p>
+      </div>
+    </div>
+  </section>
+
+  <section class="summary" aria-live="polite" aria-label="Ближайший платёж">
+    <div class="next">
+      <p class="eyebrow" id="next-label"></p>
+      <p class="big" id="next-amount"></p>
+      <p class="next-meta" id="next-meta"></p>
+    </div>
+    <dl class="facts">
+      <div><dt>Доходы за год</dt><dd id="f-inc"></dd></div>
+      <div><dt>Налог за год</dt><dd id="f-tax"></dd></div>
+      <div><dt id="f-con-l">Взносы</dt><dd id="f-con"></dd></div>
+      <div><dt>Нагрузка, % от доходов</dt><dd id="f-load"></dd></div>
+    </dl>
+  </section>
+
+  <div class="msgs" id="msgs"></div>
+
+  <section class="stack" aria-labelledby="h-ledger">
+    <div class="bar">
+      <h2 id="h-ledger">Расчёт по периодам</h2>
+      <div class="tools">
+        <span id="copy-status" role="status"></span>
+        <button class="btn" type="button" id="btn-copy">Скопировать таблицу</button>
+        <button class="btn" type="button" id="btn-clear">Очистить всё</button>
+      </div>
+    </div>
+    <div class="ledger-wrap">
+      <table>
+        <caption class="sr">Расчёт УСН нарастающим итогом по периодам</caption>
+        <thead id="thead"></thead>
+        <tbody id="tbody"></tbody>
+      </table>
+    </div>
+  </section>
+
+  <section class="stack" aria-labelledby="h-explain">
+    <div class="bar">
+      <div>
+        <h2 id="h-explain">Как это посчитано</h2>
+        <p class="hint">Выберите период. Ниже каждый шаг с правилом и с вашими цифрами.</p>
+      </div>
+      <div class="tabs" id="tabs" role="group" aria-label="Период для разбора"></div>
+    </div>
+    <ol class="steps" id="steps"></ol>
+  </section>
+
+  <section class="panel notes" aria-label="Пояснения">
+    <div>
+      <h3>Как считается</h3>
+      <ul>
+        <li>Налог считается с начала года по каждому периоду: 3, 6, 9 месяцев и год. Аванс равен налогу нарастающим итогом минус авансы, начисленные раньше.</li>
+        <li>На «Доходах» налог уменьшают взносы за себя и за работников. ИП без работников вычитают до 100% налога, остальные до 50%.</li>
+        <li>На «Доходах минус расходы» взносы входят в расходы. Минимальный налог (1% доходов) сравнивается с обычным только по итогам года. Убыток прошлых лет тоже учитывается только за год.</li>
+      </ul>
+    </div>
+    <div>
+      <h3>Что не учтено</h3>
+      <ul>
+        <li>Фактически уплаченные авансы не вводятся. Расчёт исходит из того, что вы платили ровно по расчёту.</li>
+        <li>Повышенные ставки при больших доходах, льготы кроме пониженной ставки, торговый сбор и НДС. Сроки переносятся только с выходных, праздники не учитываются.</li>
+        <li>Лимиты 2026 года: доход до 490,5 млн ₽, НДС при доходе свыше 20 млн ₽. Фиксированные взносы ИП за 2026 год: 57 390 ₽.</li>
+      </ul>
+    </div>
+  </section>
+  <p class="foot">Расчёт справочный и опирается на статьи 346.18 и 346.21 Налогового кодекса РФ. Перед оплатой сверьте суммы с бухгалтером или с уведомлением в личном кабинете налогоплательщика.</p>
+</main>
+
+<script src="calc.js"></script>
+<script src="app.js"></script>
+</body>
+</html>

@@ -1,0 +1,10 @@
+{
+  "name": "usn-calculator",
+  "version": "1.0.0",
+  "description": "Калькулятор УСН нарастающим итогом с пошаговым объяснением расчёта",
+  "private": true,
+  "scripts": {
+    "test": "node --test",
+    "start": "python3 -m http.server 8000"
+  }
+}
